@@ -11,7 +11,7 @@
           />
         </div>
       </div>
-      <h3 v-if="isSidebarOpen" class="app-name">Akudihatinya</h3>
+      <h3 v-if="isSidebarOpen" class="app-name">akudihatinya</h3>
     </div>
 
     <ul class="menu-list">

@@ -204,17 +204,12 @@
   
 <script>
 import { ref, onMounted, computed } from 'vue';
-import axios from 'axios';
+import apiClient from '../../api.js'; // Import apiClient
 import Swal from 'sweetalert2';
-import defaultProfileImage from '../../assets/profile.jpg'; // Import default profile image
+import defaultProfileImage from '../../assets/profile.jpg';
   
 export default {
   name: 'ProfilePage',
-  data() {
-    return {
-      apiStatus: 'idle', // 'idle', 'loading', 'success', 'error'
-    }
-  },
   setup() {
     const userData = ref({
       username: '',
@@ -229,34 +224,23 @@ export default {
     const isEditing = ref(false);
     const isChangingPassword = ref(false);
     const fileInput = ref(null);
-    const profilePicture = ref(defaultProfileImage); // Gunakan defaultProfileImage
-    const selectedFile = ref(null); // Tambahkan ref untuk file yang dipilih
+    const profilePicture = ref(defaultProfileImage);
+    const selectedFile = ref(null);
     const showCurrentPassword = ref(false);
     const showNewPassword = ref(false);
     const showConfirmPassword = ref(false);
+    const apiStatus = ref('idle');
 
-    const apiStatus = ref('idle'); // Inisialisasi apiStatus di setup
-
-    // Capitalize first letter of role
     const capitalizedRole = computed(() => {
       if (!userData.value.role) return '';
       return userData.value.role.charAt(0).toUpperCase() + userData.value.role.slice(1);
     });
 
-    // Fetch user data from API
     const fetchUserData = async () => {
       apiStatus.value = 'loading';
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('Token tidak ditemukan');
-        }
-
-        const response = await axios.get('http://localhost:8000/api/users/me', {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
+        // Menggunakan apiClient untuk GET request
+        const response = await apiClient.get('/users/me');
 
         const user = response.data.user;
         userData.value = {
@@ -264,7 +248,7 @@ export default {
           role: user.role || '',
           nama_puskesmas: user.puskesmas?.name || user.name || ''
         };
-        // Set profile picture from API response if available
+        
         if (user.profile_picture) {
           profilePicture.value = user.profile_picture;
         } else {
@@ -282,7 +266,6 @@ export default {
       }
     };
   
-    // Password strength calculation
     const passwordStrength = computed(() => {
       const password = passwordData.value.password;
       if (!password) return { percentage: 0, color: '#e0e0e0', text: '' };
@@ -290,20 +273,16 @@ export default {
       let strength = 0;
       let feedback = '';
       
-      // Length check
       if (password.length >= 8) strength += 33;
+      if (/[a-z]/.test(password)) strength += 33;
+      if (/[0-9]/.test(password)) strength += 34;
       
-      // Character variety checks
-      if (/[a-z]/.test(password)) strength += 33; // Has lowercase
-      if (/[0-9]/.test(password)) strength += 34; // Has number
-      
-      // Determine color and text based on strength
-      let color = '#e53935'; // Red - weak
+      let color = '#e53935';
       if (strength >= 67) {
-        color = '#43a047'; // Green - strong
+        color = '#43a047';
         feedback = 'Kuat';
       } else if (strength >= 33) {
-        color = '#ffb300'; // Amber - medium
+        color = '#ffb300';
         feedback = 'Sedang';
       } else {
         feedback = 'Lemah';
@@ -316,23 +295,20 @@ export default {
       };
     });
   
-    // Check if passwords match
     const passwordsMatch = computed(() => {
       return passwordData.value.password === passwordData.value.password_confirmation && 
              passwordData.value.password !== '';
     });
   
-    // Check if can change password
     const canChangePassword = computed(() => {
       return passwordData.value.current_password !== '' && 
              passwordData.value.password !== '' && 
              passwordData.value.password.length >= 8 &&
-             /[a-z]/.test(passwordData.value.password) && // Has lowercase
-             /[0-9]/.test(passwordData.value.password) && // Has number
+             /[a-z]/.test(passwordData.value.password) &&
+             /[0-9]/.test(passwordData.value.password) &&
              passwordsMatch.value;
     });
   
-    // Toggle password visibility
     const toggleCurrentPasswordVisibility = () => {
       showCurrentPassword.value = !showCurrentPassword.value;
     };
@@ -345,24 +321,20 @@ export default {
       showConfirmPassword.value = !showConfirmPassword.value;
     };
   
-    // Start editing profile
     const startEditing = () => {
       isEditing.value = true;
     };
   
-    // Cancel editing
     const cancelEditing = () => {
       isEditing.value = false;
-      fetchUserData(); // Reload original data
-      selectedFile.value = null; // Clear selected file on cancel
+      fetchUserData();
+      selectedFile.value = null;
     };
   
-    // Start changing password
     const startChangingPassword = () => {
       isChangingPassword.value = true;
     };
   
-    // Cancel changing password
     const cancelChangingPassword = () => {
       isChangingPassword.value = false;
       passwordData.value = {
@@ -372,42 +344,27 @@ export default {
       };
     };
   
-    // Save profile changes (including image upload)
     const saveProfile = async () => {
       apiStatus.value = 'loading';
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('Token tidak ditemukan');
-        }
-  
         const formData = new FormData();
-        // Append profile data
         formData.append('username', userData.value.username);
-        formData.append('name', userData.value.nama_puskesmas); // Use 'name' for puskesmas name if API expects it
+        formData.append('name', userData.value.nama_puskesmas);
 
-        // Append profile picture if selected
         if (selectedFile.value) {
           formData.append('profile_picture', selectedFile.value);
         }
         
-        const response = await axios.put('http://localhost:8000/api/users/me', 
-          formData,
-          {
-            headers: {
-              'Content-Type': 'multipart/form-data', // Important for file uploads
-              Authorization: `Bearer ${token}`
-            }
-          }
-        );
+        // Menggunakan apiClient untuk PUT request dengan FormData
+        // apiClient akan otomatis mengatur header yang diperlukan
+        const response = await apiClient.put('/users/me', formData);
   
-        // Update profile picture displayed from API response
         if (response.data.user.profile_picture) {
           profilePicture.value = response.data.user.profile_picture;
         } else {
-          profilePicture.value = defaultProfileImage; // Fallback to default if no picture returned
+          profilePicture.value = defaultProfileImage;
         }
-        selectedFile.value = null; // Clear selected file after successful upload
+        selectedFile.value = null;
 
         Swal.fire({
           icon: 'success',
@@ -432,58 +389,33 @@ export default {
       }
     };
   
-    // Change password
     const changePassword = async () => {
       apiStatus.value = 'loading';
       try {
-        // Validate password (client-side, backend should also validate)
         if (passwordData.value.password.length < 8) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Validasi Gagal',
-            text: 'Password harus minimal 8 karakter'
-          });
+          Swal.fire({ icon: 'error', title: 'Validasi Gagal', text: 'Password harus minimal 8 karakter' });
           apiStatus.value = 'error';
           return;
         }
         
         if (!(/[a-z]/.test(passwordData.value.password) && /[0-9]/.test(passwordData.value.password))) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Validasi Gagal',
-            text: 'Password harus mengandung huruf dan angka'
-          });
+          Swal.fire({ icon: 'error', title: 'Validasi Gagal', text: 'Password harus mengandung huruf dan angka' });
           apiStatus.value = 'error';
           return;
         }
         
         if (passwordData.value.password !== passwordData.value.password_confirmation) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Validasi Gagal',
-            text: 'Password dan konfirmasi password tidak cocok'
-          });
+          Swal.fire({ icon: 'error', title: 'Validasi Gagal', text: 'Password dan konfirmasi password tidak cocok' });
           apiStatus.value = 'error';
           return;
         }
         
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('Token tidak ditemukan');
-        }
-  
-        const response = await axios.post('http://localhost:8000/api/change-password', 
-          {
-            current_password: passwordData.value.current_password,
-            password: passwordData.value.password,
-            password_confirmation: passwordData.value.password_confirmation
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
-        );
+        // Menggunakan apiClient untuk POST request
+        const response = await apiClient.post('/change-password', {
+          current_password: passwordData.value.current_password,
+          password: passwordData.value.password,
+          password_confirmation: passwordData.value.password_confirmation
+        });
   
         Swal.fire({
           icon: 'success',
@@ -492,11 +424,7 @@ export default {
         });
   
         isChangingPassword.value = false;
-        passwordData.value = {
-          current_password: '',
-          password: '',
-          password_confirmation: ''
-        };
+        passwordData.value = { current_password: '', password: '', password_confirmation: '' };
         apiStatus.value = 'success';
       } catch (error) {
         console.error('Gagal memperbarui password:', error);
@@ -515,23 +443,19 @@ export default {
       }
     };
   
-    // Open image upload dialog
     const openImageUpload = () => {
       fileInput.value.click();
     };
   
-    // Handle image selection for preview (not upload yet)
     const handleImageUpload = (event) => {
       const file = event.target.files[0];
       if (file) {
-        // Create a preview URL
         profilePicture.value = URL.createObjectURL(file);
-        selectedFile.value = file; // Store the file for later upload
-        isEditing.value = true; // Automatically enable editing when a new picture is selected
+        selectedFile.value = file;
+        isEditing.value = true;
       }
     };
   
-    // Fetch user data when component is mounted
     onMounted(fetchUserData);
   
     return {
@@ -548,6 +472,7 @@ export default {
       passwordsMatch,
       canChangePassword,
       capitalizedRole,
+      apiStatus,
       startEditing,
       cancelEditing,
       saveProfile,
@@ -559,7 +484,6 @@ export default {
       toggleCurrentPasswordVisibility,
       toggleNewPasswordVisibility,
       toggleConfirmPasswordVisibility,
-      apiStatus // Make apiStatus available in template
     };
   }
 };

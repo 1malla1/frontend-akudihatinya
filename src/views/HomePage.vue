@@ -9,7 +9,7 @@
         <router-link to="/auth/login" class="login-btn">Login</router-link>
       </nav>
       <div class="hero-content">
-        <h1 class="hero-title">Aplikasi Kesehatan untuk Diabetes Mellitus dan Hipertensi Terlayani di Kabupaten Banjar</h1>
+        <h1 class="hero-title">Aplikasi Diabetes Melitus dan Hipertensi Terlayani di Kabupaten Banjar</h1>
         <div class="arrow-container" @click="scrollToContent">
           <font-awesome-icon :icon="['fas', 'chevron-down']" />
         </div>

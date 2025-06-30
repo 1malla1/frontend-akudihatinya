@@ -8,7 +8,7 @@
           </div>
           <div class="app-text">
             <h1 class="app-title">akudihatinya</h1>
-            <p class="app-description">Aplikasi Kesehatan untuk Diabetes Mellitus dan Hipertensi Terlayani</p>
+            <p class="app-description">Aplikasi Diabetes Melitus dan Hipertensi Terlayani</p>
           </div>
         </div>
 

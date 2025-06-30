@@ -103,7 +103,7 @@ const routes = [
       {
         path: 'diabetes-mellitus',
         component: DiabetesMellitus,
-        meta: { requiresAuth: true, isAdmin: false, title: 'Laporan Pemantauan Diabetes Mellitus' },
+        meta: { requiresAuth: true, isAdmin: false, title: 'Laporan Pemantauan Diabetes Melitus' },
       },
       {
         path: 'hipertensi',
@@ -114,7 +114,7 @@ const routes = [
         path: 'diabetes-mellitus/patient/:id',
       name: "DetailPasienDM",
       component: DetailPasienDM,
-      meta: { requiresAuth: true, isAdmin: false, title: 'Detail Pasien Diabetes Mellitus' },
+      meta: { requiresAuth: true, isAdmin: false, title: 'Detail Pasien Diabetes Melitus' },
       },
       {
         path: 'hipertensi/patient/:id',

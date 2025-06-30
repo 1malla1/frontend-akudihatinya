@@ -9,7 +9,7 @@
       </div>
 
       <div class="modal-body">
-        <form class="examination-form" @submit.prevent="handleSubmit">
+        <form class="examination-form">
           <div class="form-section">
             <div class="section-header">
               <font-awesome-icon :icon="['fas', 'calendar-alt']" class="section-icon" />
@@ -105,7 +105,7 @@
             <button class="btn-cancel" @click="$emit('close')" type="button">
               <font-awesome-icon :icon="['fas', 'times']" /> Batal
             </button>
-            <button class="btn-save" @click="handleSubmit" :disabled="isSubmitting">
+            <button class="btn-save" @click="handleSubmit" type="button" :disabled="isSubmitting">
               <span v-if="isSubmitting">
                 <font-awesome-icon :icon="['fas', 'spinner']" spin /> Menyimpan...
               </span>

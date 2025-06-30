@@ -10,7 +10,7 @@
           />
         </div>
       </div>
-      <h3 v-if="isSidebarOpen" class="app-name">Akudihatinya</h3>
+      <h3 v-if="isSidebarOpen" class="app-name">akudihatinya</h3>
     </div>
 
     <ul class="menu-list">
@@ -68,7 +68,7 @@ export default {
         { key: 'list-pasien', label: 'List Pasien', icon: 'users' },
       ],
       diseaseItems: [
-        { key: 'diabetes-mellitus', label: 'Diabetes Mellitus', icon: 'disease' },
+        { key: 'diabetes-mellitus', label: 'Diabetes Melitus', icon: 'disease' },
         { key: 'hipertensi', label: 'Hipertensi', icon: 'heart-pulse' },
       ],
     };

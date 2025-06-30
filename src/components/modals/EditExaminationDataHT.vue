@@ -14,7 +14,7 @@
           <p>Memuat data pemeriksaan...</p>
         </div>
         
-        <form v-else class="examination-form" @submit.prevent="handleSubmit">
+        <form v-else class="examination-form">
           <div class="form-section">
             <div class="section-header">
               <font-awesome-icon :icon="['fas', 'calendar-alt']" class="section-icon" />
@@ -27,6 +27,8 @@
                 <VueDatePicker
                   id="date"
                   v-model="formData.date"
+                  :min-date="minDate"
+                  :max-date="maxDate"
                   :enable-time-picker="false"
                   :year-picker="false"
                   :format="formatDateForPicker"
@@ -37,7 +39,7 @@
                   required
                   :state="errors.date ? false : null"
                   ref="dateInput"
-                  @update:model-value="errors.date = ''"
+                  @update:model-value="clearError('date')"
                 />
               </div>
               <transition name="fade">
@@ -108,7 +110,7 @@
             <button class="btn-cancel" @click="$emit('close')" type="button">
               <font-awesome-icon :icon="['fas', 'times']" /> Batal
             </button>
-            <button class="btn-save" type="submit" :disabled="isSubmitting">
+            <button class="btn-save" @click="handleSubmit" type="button" :disabled="isSubmitting">
               <span v-if="isSubmitting">
                 <font-awesome-icon :icon="['fas', 'spinner']" spin /> Menyimpan...
               </span>
@@ -154,6 +156,25 @@ export default {
       },
     };
   },
+  computed: {
+    parsedSelectedYear() {
+      // Untuk edit, kita ambil tahun dari tanggal data yang sedang diedit
+      if (this.formData.date) {
+        return this.formData.date.getFullYear();
+      }
+      return new Date().getFullYear();
+    },
+    minDate() {
+      return new Date(this.parsedSelectedYear, 0, 1);
+    },
+    maxDate() {
+      const currentYear = new Date().getFullYear();
+      if (this.parsedSelectedYear === currentYear) {
+        return new Date();
+      }
+      return new Date(this.parsedSelectedYear, 11, 31);
+    }
+},
   watch: {
     visible(newValue) {
       if (newValue && this.examData) {
@@ -165,7 +186,6 @@ export default {
     }
   },
   methods: {
-    // DITAMBAHKAN: Method untuk handle loading dan populasi data
     async fetchExaminationData() {
       this.isLoading = true;
       try {
@@ -213,60 +233,89 @@ export default {
         }
       });
     },
-    // DIUBAH: Logika validasi disamakan dengan form "Add"
     validateForm() {
+      // Reset semua error
       Object.keys(this.errors).forEach(key => this.errors[key] = '');
       let isValid = true;
       let firstErrorField = null;
 
+      // Validasi tanggal
       if (!this.formData.date) {
-        this.errors.date = "Tanggal pemeriksaan wajib diisi.";
+        this.errors.date = "Tanggal pemeriksaan wajib diisi";
         isValid = false;
         if (!firstErrorField) firstErrorField = 'dateInput';
       }
 
-      this.validateSystolic();
-      this.validateDiastolic();
-      
-      if (!this.formData.systolic) {
-        this.errors.systolic = "Tekanan darah sistolik wajib diisi.";
+      // Validasi sistolik
+      if (!this.formData.systolic && this.formData.systolic !== 0) {
+        this.errors.systolic = "Tekanan darah sistolik wajib diisi";
         isValid = false;
         if (!firstErrorField) firstErrorField = 'systolicInput';
-      } else if (this.errors.systolic) {
-        isValid = false;
-        if (!firstErrorField) firstErrorField = 'systolicInput';
+      } else {
+        // Jalankan validasi range sistolik
+        this.validateSystolic();
+        if (this.errors.systolic) {
+          isValid = false;
+          if (!firstErrorField) firstErrorField = 'systolicInput';
+        }
       }
 
-      if (!this.formData.diastolic) {
-        this.errors.diastolic = "Tekanan darah diastolik wajib diisi.";
+      // Validasi diastolik
+      if (!this.formData.diastolic && this.formData.diastolic !== 0) {
+        this.errors.diastolic = "Tekanan darah diastolik wajib diisi";
         isValid = false;
         if (!firstErrorField) firstErrorField = 'diastolicInput';
-      } else if (this.errors.diastolic) {
-        isValid = false;
-        if (!firstErrorField) firstErrorField = 'diastolicInput';
+      } else {
+        // Jalankan validasi range diastolik
+        this.validateDiastolic();
+        if (this.errors.diastolic) {
+          isValid = false;
+          if (!firstErrorField) firstErrorField = 'diastolicInput';
+        }
       }
       
-      if (!isValid) {
+      // Scroll ke error pertama jika ada
+      if (!isValid && firstErrorField) {
         this.scrollToError(firstErrorField);
       }
+
       return isValid;
     },
     validateSystolic() {
       const val = this.formData.systolic;
-      if (val === null || val === '') { this.errors.systolic = ""; return; }
+      
+      // Jika kosong, biarkan validasi utama yang menangani
+      if (val === null || val === '' || val === undefined) { 
+        return; 
+      }
+      
+      // Validasi range
       if (val < 50 || val > 300) {
-        this.errors.systolic = "Nilai Sistolik harus antara 50 dan 300.";
+        this.errors.systolic = "Nilai sistolik harus antara 50 dan 300 mmHg";
       } else {
-        this.errors.systolic = "";
+        // Clear error jika valid dan sudah ada isinya
+        if (this.errors.systolic && this.errors.systolic.includes("antara")) {
+          this.errors.systolic = "";
+        }
       }
     },
+
     validateDiastolic() {
       const val = this.formData.diastolic;
-      if (val === null || val === '') { this.errors.diastolic = ""; return; }
+      
+      // Jika kosong, biarkan validasi utama yang menangani
+      if (val === null || val === '' || val === undefined) { 
+        return; 
+      }
+      
+      // Validasi range
       if (val < 30 || val > 200) {
-        this.errors.diastolic = "Nilai Diastolik harus antara 30 dan 200.";
+        this.errors.diastolic = "Nilai diastolik harus antara 30 dan 200 mmHg";
       } else {
-        this.errors.diastolic = "";
+        // Clear error jika valid dan sudah ada isinya
+        if (this.errors.diastolic && this.errors.diastolic.includes("antara")) {
+          this.errors.diastolic = "";
+        }
       }
     },
     // DIUBAH: Menggunakan apiClient dan notifikasi Swal yang konsisten
@@ -308,6 +357,11 @@ export default {
         });
       } finally {
         this.isSubmitting = false;
+      }
+    },
+    clearError(fieldName) {
+      if (this.errors[fieldName]) {
+        this.errors[fieldName] = '';
       }
     },
     resetForm() {

@@ -180,8 +180,8 @@
                 <th rowspan="2">Aksi</th>
               </tr>
               <tr>
-                <th>Systolic (mmHg)</th>
-                <th>Diastolic (mmHg)</th>
+                <th>Sistolik (mmHg)</th>
+                <th>Diastolik (mmHg)</th>
               </tr>
             </thead>
             <tbody>
